@@ -35,10 +35,7 @@ export interface ApkRelease {
 export async function checkApkUpdate(repo = GITHUB_REPO, current = APP_VERSION): Promise<ApkRelease | null> {
   if (!repo) return null
   try {
-    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
-      headers: { Accept: 'application/vnd.github+json' },
-      cache: 'no-store',
-    })
+    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, { cache: 'no-store' })
     if (!res.ok) return null
     const rel = (await res.json()) as { tag_name: string; body?: string; assets?: { name: string; browser_download_url: string }[] }
     const apk = rel.assets?.find((a) => a.name.endsWith('.apk'))
