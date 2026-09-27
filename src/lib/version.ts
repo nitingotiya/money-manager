@@ -5,7 +5,7 @@ import { CHANGELOG, type Release } from '../changelog'
 export const APP_VERSION: string = __APP_VERSION__
 
 /** "owner/repo" of the GitHub repository whose Releases carry the Android APK. Set at build time. */
-export const GITHUB_REPO: string = import.meta.env.VITE_GITHUB_REPO ?? ''
+export const GITHUB_REPO: string = import.meta.env?.VITE_GITHUB_REPO ?? ''
 
 export const isNativeApp = () => Capacitor.isNativePlatform()
 
@@ -32,17 +32,17 @@ export interface ApkRelease {
  * Android app only: asks GitHub for the latest release and returns it when it is newer than this build
  * and has an APK attached. Returns null when up to date, offline, or not configured.
  */
-export async function checkApkUpdate(): Promise<ApkRelease | null> {
-  if (!GITHUB_REPO) return null
+export async function checkApkUpdate(repo = GITHUB_REPO, current = APP_VERSION): Promise<ApkRelease | null> {
+  if (!repo) return null
   try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
       headers: { Accept: 'application/vnd.github+json' },
       cache: 'no-store',
     })
     if (!res.ok) return null
     const rel = (await res.json()) as { tag_name: string; body?: string; assets?: { name: string; browser_download_url: string }[] }
     const apk = rel.assets?.find((a) => a.name.endsWith('.apk'))
-    if (!apk || compareVersions(rel.tag_name, APP_VERSION) <= 0) return null
+    if (!apk || compareVersions(rel.tag_name, current) <= 0) return null
     return { version: rel.tag_name.replace(/^v/, ''), url: apk.browser_download_url, notes: rel.body ?? '' }
   } catch {
     return null
