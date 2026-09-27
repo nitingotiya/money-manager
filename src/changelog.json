@@ -1,0 +1,19 @@
+[
+  {
+    "version": "1.1.0",
+    "date": "2026-09-27",
+    "notes": [
+      "EMI entries can include an amount paid upfront.",
+      "Record one lump sum and it is split across the oldest unpaid EMIs.",
+      "Tap a person to see charts of everything they owe and have paid.",
+      "The app now tells you when a new version is ready."
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "date": "2026-09-27",
+    "notes": [
+      "First version: transactions, budgets, reports, savings goals, bills, and lending and EMI tracking."
+    ]
+  }
+]
