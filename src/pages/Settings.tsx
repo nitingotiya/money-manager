@@ -30,6 +30,7 @@ export default function Settings() {
   const [pw, setPw] = useState(false)
   const [savedName, setSavedName] = useState(false)
   const [showLog, setShowLog] = useState(false)
+  const [erased, setErased] = useState<'' | 'working' | 'done'>('')
   const up = useUpdates()
 
   function applyTheme(t: 'system' | 'light' | 'dark') {
@@ -54,7 +55,9 @@ export default function Settings() {
 
   return (
     <div className="stack">
-      <h1>Settings</h1>
+      <div className="page-head">
+        <h1>Settings</h1>
+      </div>
 
       <div className="card stack">
         <h2>Profile</h2>
@@ -137,6 +140,26 @@ export default function Settings() {
           <button className="btn" onClick={() => d.loadSample()}>
             Load sample data
           </button>
+        </div>
+        <div className="erase-box stack">
+          <div>
+            <b>Start fresh</b>
+            <div className="muted small">
+              Deletes all transactions, budgets, goals, bills, lending entries and payments, and resets categories to the defaults.
+              Your name, currency and theme stay. This can't be undone, so download a backup first if you might need it.
+            </div>
+          </div>
+          <div className="row wrap">
+            <ConfirmButton className="btn danger" armedLabel="Tap again to erase everything" onClick={async () => {
+              setErased('working')
+              await d.eraseAll()
+              setErased('done')
+            }}>
+              <Icon name="trash" /> Erase all data
+            </ConfirmButton>
+            {erased === 'working' && <span className="muted small">Erasing…</span>}
+            {erased === 'done' && <span className="small income">All data erased.</span>}
+          </div>
         </div>
         <div className="muted small">
           {d.mode === 'cloud'

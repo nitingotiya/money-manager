@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useData } from '../lib/data'
 import { num, today } from '../lib/format'
 import { PAYMENT_MODES, type Transaction, type TxType } from '../lib/types'
-import { ConfirmButton, Field, Modal, Seg } from './ui'
+import { ConfirmButton, Field, Modal, Seg, haptic } from './ui'
 
 export function TxForm({ tx, onClose }: { tx?: Transaction; onClose(): void }) {
   const { categories, add, update, remove } = useData()
@@ -28,6 +28,7 @@ export function TxForm({ tx, onClose }: { tx?: Transaction; onClose(): void }) {
       const row = { type, amount: n, category_id: valid, date, note: note.trim(), mode }
       if (tx) await update('transactions', tx.id, row)
       else await add('transactions', row)
+      haptic(15)
       onClose()
     } catch (e) {
       setErr((e as Error).message)

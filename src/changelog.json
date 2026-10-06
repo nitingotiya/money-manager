@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.3.0",
+    "date": "2026-10-06",
+    "notes": [
+      "Feels like a phone app: fixed top bar, smooth screen changes, press feedback, no zoom or pull-to-refresh.",
+      "Forms slide up from the bottom; swipe down or use the phone's back button to close them.",
+      "The status bar matches the app colours, and returning to a list keeps your place.",
+      "Long-press the app icon for shortcuts to Add transaction and Lending.",
+      "An Install button appears when the app is opened in the phone browser."
+    ]
+  },
+  {
+    "version": "1.2.0",
+    "date": "2026-10-05",
+    "notes": [
+      "New \"Erase all data\" button in Settings to clear sample or test data and start fresh."
+    ]
+  },
+  {
     "version": "1.1.0",
     "date": "2026-09-27",
     "notes": [

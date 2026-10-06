@@ -6,6 +6,7 @@ import { summarize } from '../lib/loans'
 import { Empty, Progress } from '../components/ui'
 import { Icon } from '../components/icons'
 import { useUI } from '../App'
+import { InstallCard } from '../components/InstallCard'
 
 export default function Dashboard() {
   const d = useData()
@@ -47,6 +48,8 @@ export default function Dashboard() {
           <Icon name="plus" /> Add transaction
         </button>
       </div>
+
+      <InstallCard />
 
       {!hasAnything && (
         <div className="card stack">

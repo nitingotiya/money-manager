@@ -76,11 +76,11 @@ export default function Transactions() {
       <div className="page-head">
         <h1>Transactions</h1>
         <div className="row wrap">
-          <button className="btn sm" onClick={() => fileRef.current?.click()}>
-            <Icon name="upload" /> Import CSV
+          <button className="btn sm" onClick={() => fileRef.current?.click()} aria-label="Import CSV">
+            <Icon name="upload" /> <span className="hide-mobile">Import CSV</span>
           </button>
-          <button className="btn sm" onClick={exportCSV} disabled={!d.transactions.length}>
-            <Icon name="download" /> Export CSV
+          <button className="btn sm" onClick={exportCSV} disabled={!d.transactions.length} aria-label="Export CSV">
+            <Icon name="download" /> <span className="hide-mobile">Export CSV</span>
           </button>
           <input
             ref={fileRef}

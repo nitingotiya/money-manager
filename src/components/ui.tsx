@@ -1,30 +1,110 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from './icons'
 import { fmtMonth, shiftMonth } from '../lib/format'
 
+/** A short vibration on Android, like the tap feedback of native apps. Does nothing where unsupported. */
+export function haptic(ms = 10) {
+  try {
+    navigator.vibrate?.(ms)
+  } catch {
+    /* not supported */
+  }
+}
+
+// Open sheets, newest last. Each one adds a history entry, so the phone's back button or
+// back gesture closes the sheet instead of leaving the screen.
+const sheetStack: { id: number; close(): void }[] = []
+let sheetSeq = 0
+let ignorePops = 0
+if (typeof window !== 'undefined')
+  window.addEventListener('popstate', () => {
+    if (ignorePops > 0) return void ignorePops--
+    sheetStack[sheetStack.length - 1]?.close()
+  })
+
 export function Modal({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  const [drag, setDrag] = useState(0)
+  const start = useRef<number | null>(null)
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const id = ++sheetSeq
+    let closedByBack = false
+    sheetStack.push({
+      id,
+      close: () => {
+        closedByBack = true
+        closeRef.current()
+      },
+    })
+    history.pushState({ ...(history.state ?? {}), sheet: id }, '')
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
+      const i = sheetStack.findIndex((x) => x.id === id)
+      if (i >= 0) sheetStack.splice(i, 1)
+      // Closed with a button: remove the history entry this sheet added.
+      if (!closedByBack && history.state?.sheet === id) {
+        ignorePops++
+        history.back()
+      }
     }
-  }, [onClose])
+  }, [])
+
+  // Swipe the sheet down by its top bar to close it (phones).
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse' || (e.target as HTMLElement).closest('button')) return
+    start.current = e.clientY
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (start.current !== null) setDrag(Math.max(0, e.clientY - start.current))
+  }
+  const onPointerUp = () => {
+    if (start.current === null) return
+    start.current = null
+    if (drag > 90) closeRef.current()
+    else setDrag(0)
+  }
+
   return (
     <div className="backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="modal-head">
-          <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
-            <Icon name="x" />
-          </button>
+      <div
+        className={'modal' + (drag ? ' dragging' : '')}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        style={drag ? { transform: `translateY(${drag}px)` } : undefined}
+      >
+        <div className="sheet-grip" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+          <span className="grip-bar" aria-hidden="true" />
+          <div className="modal-head">
+            <h2>{title}</h2>
+            <button className="icon-btn" onClick={onClose} aria-label="Close">
+              <Icon name="x" />
+            </button>
+          </div>
         </div>
         {children}
       </div>
     </div>
+  )
+}
+
+/** App-bar back arrow: goes back in history like a phone's back gesture, or to `fallback` when opened directly. */
+export function BackButton({ fallback, label }: { fallback: string; label: string }) {
+  const nav = useNavigate()
+  const loc = useLocation()
+  return (
+    <button className="icon-btn back-btn" aria-label={`Back to ${label}`} onClick={() => (loc.key !== 'default' ? nav(-1) : nav(fallback))}>
+      <Icon name="left" />
+    </button>
   )
 }
 
@@ -141,7 +221,14 @@ export function ConfirmButton({
     <button
       type={type}
       className={(className ?? 'btn') + (armed ? ' armed' : '')}
-      onClick={() => (armed ? onClick() : setArmed(true))}
+      onClick={() => {
+        if (!armed) {
+          haptic()
+          return setArmed(true)
+        }
+        setArmed(false)
+        onClick()
+      }}
     >
       {armed ? armedLabel : children}
     </button>

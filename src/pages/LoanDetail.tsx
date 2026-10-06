@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../lib/data'
 import { fmtDate, money, num, today } from '../lib/format'
 import { STATUS_LABEL, reminderText, schedule, spreadPayment, summarize, type Installment, type InstallmentStatus } from '../lib/loans'
-import { ConfirmButton, Empty, Field, Modal, Progress, Seg, initials } from '../components/ui'
+import { BackButton, ConfirmButton, Empty, Field, Modal, Progress, Seg, haptic, initials } from '../components/ui'
 import { Icon } from '../components/icons'
 import { LoanForm, statusBadge } from './Lending'
 import type { Loan, LoanPayment } from '../lib/types'
@@ -46,15 +46,12 @@ export default function LoanDetail() {
 
   return (
     <div className="stack">
-      <div>
-        <Link to="/lending" className="small row" style={{ gap: 4, textDecoration: 'none', marginBottom: 10 }}>
-          <Icon name="left" className="inline-icon" /> Lending & EMIs
-        </Link>
-        <div className="page-head" style={{ marginBottom: 0 }}>
-          <div className="row">
-            <div className="avatar">{initials(loan.person)}</div>
-            <div>
-              <div className="row" style={{ gap: 8 }}>
+      <div className="page-head detail-head" style={{ marginBottom: 0 }}>
+          <div className="row grow" style={{ minWidth: 0 }}>
+            <BackButton fallback="/lending" label="Lending & EMIs" />
+            <div className="avatar hide-mobile">{initials(loan.person)}</div>
+            <div className="grow" style={{ minWidth: 0 }}>
+              <div className="row" style={{ gap: 8, minWidth: 0 }}>
                 <h1>
                   <Link to={`/lending/person/${encodeURIComponent(loan.person)}`} className="person-link">
                     {loan.person}
@@ -62,29 +59,27 @@ export default function LoanDetail() {
                 </h1>
                 {statusBadge(s)}
               </div>
-              <div className="muted small">
+              <div className="muted small ellipsis">
                 {lent ? 'Owes you' : 'You owe'} · {loan.title}
                 {loan.kind === 'emi' && loan.card ? ` · ${loan.card}` : ''}
               </div>
             </div>
           </div>
-          <div className="row wrap">
-            <button className="btn sm" onClick={() => setEditing(true)}>
-              <Icon name="edit" /> Edit
+          <div className="row head-actions">
+            <button className="btn sm" onClick={() => setEditing(true)} aria-label="Edit">
+              <Icon name="edit" /> <span className="hide-mobile">Edit</span>
             </button>
             <ConfirmButton
               className="btn sm danger"
+              armedLabel="Delete?"
               onClick={async () => {
-                {
-                  await d.remove('loans', loan.id)
-                  nav('/lending')
-                }
+                await d.remove('loans', loan.id)
+                nav('/lending', { replace: true })
               }}
             >
-              <Icon name="trash" /> Delete
+              <Icon name="trash" /> <span className="hide-mobile">Delete</span>
             </ConfirmButton>
           </div>
-        </div>
       </div>
 
       <div className="card">
@@ -132,7 +127,7 @@ export default function LoanDetail() {
         </div>
         {loan.notes && <div className="small" style={{ marginTop: 10 }}>{loan.notes}</div>}
 
-        <div className="row wrap" style={{ marginTop: 14 }}>
+        <div className="row wrap action-col" style={{ marginTop: 14 }}>
           {s.status !== 'settled' && (
             <button className="btn primary" onClick={() => setPay({ inst: sch.find((i) => i.paid < i.amount - 0.5) })}>
               <Icon name="plus" /> {lent ? 'Record payment received' : 'Record payment made'}
@@ -314,11 +309,13 @@ function PaymentForm({
     if (plan && !editingId) {
       if (plan.left > 0) return setErr(`That is ${money(plan.left)} more than what is left on these EMIs. Lower the amount.`)
       for (const part of plan.parts) await d.add('loan_payments', { loan_id: loan.id, ...part, paid_on: paidOn, note: note.trim() || 'Lump sum' })
+      haptic(15)
       return onClose()
     }
     const row = { loan_id: loan.id, installment_no: emi ? no : null, amount: n, paid_on: paidOn, note: note.trim() }
     if (editingId) await d.update('loan_payments', editingId, row)
     else await d.add('loan_payments', row)
+    haptic(15)
     onClose()
   }
 

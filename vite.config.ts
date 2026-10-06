@@ -15,17 +15,29 @@ export default defineConfig({
       includeAssets: ['icon.svg'],
       workbox: { clientsClaim: true, cleanupOutdatedCaches: true },
       manifest: {
+        id: './',
         name: 'Money Manager',
         short_name: 'Money',
-        description: 'Track expenses, budgets, savings goals and bills.',
-        theme_color: '#0f766e',
-        background_color: '#f6f7f5',
+        description: 'Track expenses, budgets, savings goals, bills and money friends owe you.',
+        lang: 'en-IN',
+        theme_color: '#f6f7f5',
+        // Splash screen shown while the installed app starts
+        background_color: '#0f766e',
         display: 'standalone',
+        display_override: ['standalone'],
+        orientation: 'portrait',
         start_url: '.',
+        scope: '.',
+        categories: ['finance', 'productivity'],
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+        // Long-press the app icon on the home screen to jump straight to these
+        shortcuts: [
+          { name: 'Add transaction', short_name: 'Add', url: './?action=add#/', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Lending & EMIs', short_name: 'Lending', url: './#/lending', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
         ],
       },
     }),

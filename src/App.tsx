@@ -1,9 +1,11 @@
-import { Suspense, createContext, lazy, useContext, useState, type ReactNode } from 'react'
-import { HashRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Suspense, createContext, lazy, useContext, useEffect, useState, type ReactNode } from 'react'
+import { HashRouter, NavLink, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
 import { DataProvider, useData } from './lib/data'
 import { Icon } from './components/icons'
 import { TxForm } from './components/TxForm'
+import { haptic } from './components/ui'
+import { useNativeFeel } from './lib/native'
 import { UpdateBanner, WhatsNew } from './components/UpdateUI'
 import { UpdateProvider } from './lib/updates'
 import type { Transaction } from './lib/types'
@@ -48,6 +50,7 @@ const MOBILE_NAV = [
 function Layout({ children }: { children: ReactNode }) {
   const [tx, setTx] = useState<{ open: boolean; tx?: Transaction }>({ open: false })
   const loc = useLocation()
+  useNativeFeel(() => setTx({ open: true }))
   const moreActive = ['/more', '/budgets', '/goals', '/bills', '/settings'].some((p) => loc.pathname.startsWith(p))
   return (
     <UICtx.Provider value={{ openTx: (t) => setTx({ open: true, tx: t }) }}>
@@ -84,7 +87,14 @@ function Layout({ children }: { children: ReactNode }) {
         ))}
       </nav>
       {!loc.pathname.startsWith('/lending') && (
-        <button className="fab" onClick={() => setTx({ open: true })} aria-label="Add transaction">
+        <button
+          className="fab"
+          onClick={() => {
+            haptic()
+            setTx({ open: true })
+          }}
+          aria-label="Add transaction"
+        >
           <Icon name="plus" />
         </button>
       )}
@@ -93,10 +103,56 @@ function Layout({ children }: { children: ReactNode }) {
   )
 }
 
+function Boot() {
+  return (
+    <div className="boot" role="status">
+      <img src="./icon.svg" alt="" />
+      <span>Money Manager</span>
+    </div>
+  )
+}
+
+/** Keeps each screen's scroll position: new screens start at the top, going back returns to where you were. */
+function useScrollMemory() {
+  const loc = useLocation()
+  const type = useNavigationType()
+  useEffect(() => {
+    const key = 'mm:scroll:' + loc.pathname
+    let y = 0
+    if (type === 'POP') {
+      try {
+        y = Number(sessionStorage.getItem(key)) || 0
+      } catch {
+        /* ignore */
+      }
+    }
+    requestAnimationFrame(() => window.scrollTo(0, y))
+    const save = () => {
+      try {
+        sessionStorage.setItem(key, String(window.scrollY))
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener('scroll', save, { passive: true })
+    return () => window.removeEventListener('scroll', save)
+  }, [loc.pathname, type])
+}
+
+function Screen({ children }: { children: ReactNode }) {
+  const loc = useLocation()
+  useScrollMemory()
+  return (
+    <div key={loc.pathname} className="screen">
+      {children}
+    </div>
+  )
+}
+
 function Gate() {
   const { user, loading } = useAuth()
   const { ready, error, clearError } = useData()
-  if (loading) return <div className="auth-wrap muted">Loading…</div>
+  if (loading) return <Boot />
   if (!user) return <Login />
   if (!ready)
     return (
@@ -109,7 +165,7 @@ function Gate() {
             <button className="btn" onClick={() => location.reload()}>Try again</button>
           </div>
         ) : (
-          <span className="muted">Loading your data…</span>
+          <Boot />
         )}
       </div>
     )
@@ -125,6 +181,7 @@ function Gate() {
           </button>
         </div>
       )}
+      <Screen>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/transactions" element={<Transactions />} />
@@ -139,6 +196,7 @@ function Gate() {
         <Route path="/more" element={<More />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      </Screen>
     </Layout>
   )
 }

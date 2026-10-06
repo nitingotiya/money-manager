@@ -11,7 +11,9 @@ const ITEMS = [
 export default function More() {
   return (
     <div>
-      <h1 style={{ marginBottom: 16 }}>More</h1>
+      <div className="page-head">
+        <h1>More</h1>
+      </div>
       <div className="card more-list">
         {ITEMS.map((i) => (
           <Link key={i.to} to={i.to}>

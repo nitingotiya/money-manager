@@ -17,6 +17,8 @@ interface DataState extends Omit<Store, 'settings'> {
   update<K extends TableName>(table: K, id: string, patch: Partial<Tables[K]>): Promise<void>
   remove(table: TableName, id: string): Promise<void>
   loadSample(): Promise<void>
+  /** Deletes every entry and restores the default categories. Name, currency and theme are kept. */
+  eraseAll(): Promise<void>
   clearError(): void
 }
 
@@ -135,6 +137,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
           next.bills = s.bills.map((b) => (b.category_id === id ? { ...b, category_id: null } : b))
         }
         return next
+      })
+    },
+    async eraseAll() {
+      await guard(async () => {
+        // Children before parents, so nothing points at a deleted row.
+        const order: TableName[] = ['loan_payments', 'loans', 'transactions', 'budgets', 'bills', 'goals', 'categories']
+        for (const t of order) for (const r of store[t] as { id: string }[]) await backend!.remove(t, r.id)
+        const cats = (await Promise.all(
+          DEFAULT_CATEGORIES.map((c) => backend!.insert('categories', { id: uid(), ...c })),
+        )) as unknown as Store['categories']
+        setStore((s) => ({
+          ...s,
+          loan_payments: [], loans: [], transactions: [], budgets: [], bills: [], goals: [], categories: cats,
+        }))
       })
     },
     async loadSample() {

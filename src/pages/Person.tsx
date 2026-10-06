@@ -18,8 +18,7 @@ import {
 import { useData } from '../lib/data'
 import { fmtDate, fmtMonth, monthKey, money, parseDate, shiftMonth, today } from '../lib/format'
 import { STATUS_LABEL, schedule, summarize, type InstallmentStatus } from '../lib/loans'
-import { Empty, Progress, Seg, initials } from '../components/ui'
-import { Icon } from '../components/icons'
+import { BackButton, Empty, Progress, Seg, initials } from '../components/ui'
 import { statusBadge } from './Lending'
 import type { LoanDirection } from '../lib/types'
 
@@ -142,33 +141,30 @@ export default function Person() {
 
   return (
     <div className="stack">
-      <div>
-        <Link to="/lending" className="small row" style={{ gap: 4, textDecoration: 'none', marginBottom: 10 }}>
-          <Icon name="left" className="inline-icon" /> Lending & EMIs
-        </Link>
-        <div className="page-head" style={{ marginBottom: 0 }}>
-          <div className="row">
-            <div className="avatar">{initials(person)}</div>
-            <div>
-              <h1>{person}</h1>
+        <div className="page-head detail-head" style={{ marginBottom: 0 }}>
+          <div className="row grow" style={{ minWidth: 0 }}>
+            <BackButton fallback="/lending" label="Lending & EMIs" />
+            <div className="avatar hide-mobile">{initials(person)}</div>
+            <div className="grow" style={{ minWidth: 0 }}>
+              <h1 className="ellipsis">{person}</h1>
               <div className="muted small">
                 {all.length} {all.length === 1 ? 'entry' : 'entries'}
                 {phone ? ` · ${phone}` : ''}
               </div>
             </div>
           </div>
-          {hasLent && hasBorrowed && (
-            <Seg
-              value={dir}
-              onChange={setDir}
-              options={[
-                { value: 'lent', label: 'They owe me' },
-                { value: 'borrowed', label: 'I owe them' },
-              ]}
-            />
-          )}
         </div>
-      </div>
+      {hasLent && hasBorrowed && (
+        <Seg
+          full
+          value={dir}
+          onChange={setDir}
+          options={[
+            { value: 'lent', label: 'They owe me' },
+            { value: 'borrowed', label: 'I owe them' },
+          ]}
+        />
+      )}
 
       <div className="grid grid-4 stats">
         <div className="card stat">
